@@ -16,9 +16,9 @@ public class WarehouseController : ControllerBase
     }
 
     [HttpPost]
-    public IActionResult CreateProductWarehouseRepository(ProductWarehouse productWarehouse)
+    public async Task<IActionResult> CreateProductWarehouseRepository(ProductWarehouse productWarehouse)
     {
-        var affectedCount = _productWarehouseService.CreateProductWarehouse(productWarehouse);
+        var affectedCount = await _productWarehouseService.CreateProductWarehouse(productWarehouse);
         return StatusCode(StatusCodes.Status201Created);
     }
 }

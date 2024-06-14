@@ -4,5 +4,5 @@ namespace tutorial6.Repos;
 
 public interface IProductWarehouseRepository
 {
-    int CreateProductWarehouse(ProductWarehouse productWarehouse);
+    Task <int> CreateProductWarehouse(ProductWarehouse productWarehouse);
 }

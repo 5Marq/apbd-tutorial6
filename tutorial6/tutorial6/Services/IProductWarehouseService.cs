@@ -4,5 +4,5 @@ namespace tutorial6.Services;
 
 public interface IProductWarehouseService
 {
-    int CreateProductWarehouse(ProductWarehouse productWarehouse);
+    Task<int> CreateProductWarehouse(ProductWarehouse productWarehouse);
 }

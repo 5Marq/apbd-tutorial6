@@ -13,10 +13,10 @@ namespace tutorial6.Repos
             _configuration = configuration;
         }
 
-        public int CreateProductWarehouse(ProductWarehouse productWarehouse)
+        public async Task<int> CreateProductWarehouse(ProductWarehouse productWarehouse)
         {
             using var con = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
-            con.Open();
+            await con.OpenAsync();
             using var transaction = con.BeginTransaction();
 
             try
@@ -24,22 +24,22 @@ namespace tutorial6.Repos
                 // Sprawdzenie, czy produkt istnieje
                 var cmd = new SqlCommand("SELECT COUNT(*) FROM Product WHERE IdProduct = @IdProduct", con, transaction);
                 cmd.Parameters.AddWithValue("@IdProduct", productWarehouse.IdProduct);
-                var productExists = (int)cmd.ExecuteScalar() > 0;
+                var productExists = (int)await cmd.ExecuteScalarAsync() > 0;
                 if (!productExists)
                 {
-                    throw new Exception("Product not found."); //działa
+                    throw new Exception("Product not found.");
                 }
 
                 // Sprawdzenie, czy magazyn istnieje
                 cmd.CommandText = "SELECT COUNT(*) FROM Warehouse WHERE IdWarehouse = @IdWarehouse";
                 cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@IdWarehouse", productWarehouse.IdWarehouse);
-                var warehouseExists = (int)cmd.ExecuteScalar() > 0;
+                var warehouseExists = (int)await cmd.ExecuteScalarAsync() > 0;
                 if (!warehouseExists)
                 {
                     throw new Exception("Warehouse not found.");
                 }
-                
+
                 // Sprawdzenie, czy istnieje odpowiednie zamówienie
                 cmd.CommandText = @"
                     SELECT TOP 1 IdOrder, CreatedAt 
@@ -53,13 +53,14 @@ namespace tutorial6.Repos
                 int orderId;
                 DateTime orderCreatedAt;
 
-                using (var reader = cmd.ExecuteReader())
+                using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     if (!reader.HasRows)
                     {
                         throw new Exception("No matching order found.");
                     }
-                    reader.Read();
+
+                    await reader.ReadAsync();
                     orderId = (int)reader["IdOrder"];
                     orderCreatedAt = (DateTime)reader["CreatedAt"];
                 }
@@ -69,14 +70,14 @@ namespace tutorial6.Repos
                 cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@FulfilledAt", DateTime.Now);
                 cmd.Parameters.AddWithValue("@IdOrder", orderId);
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
 
                 // Wstawienie rekordu do tabeli Product_Warehouse
                 cmd.CommandText = @"
                     INSERT INTO Product_Warehouse(IdWarehouse, IdProduct, IdOrder, Amount, Price, CreatedAt)
                     OUTPUT INSERTED.IdProductWarehouse
                     VALUES(@IdWarehouse, @IdProduct, @IdOrder, @Amount, 
-                           (SELECT Price FROM Product WHERE IdProduct = @IdProduct) * @Amount, @CreatedAt)"; //swieci sie na czerwono ale dziala ...
+                           (SELECT Price FROM Product WHERE IdProduct = @IdProduct) * @Amount, @CreatedAt)";
                 cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@IdWarehouse", productWarehouse.IdWarehouse);
                 cmd.Parameters.AddWithValue("@IdProduct", productWarehouse.IdProduct);
@@ -84,7 +85,7 @@ namespace tutorial6.Repos
                 cmd.Parameters.AddWithValue("@Amount", productWarehouse.Amount);
                 cmd.Parameters.AddWithValue("@CreatedAt", DateTime.Now);
 
-                var productWarehouseId = (int)cmd.ExecuteScalar();
+                var productWarehouseId = (int)await cmd.ExecuteScalarAsync();
 
                 // Zatwierdzenie transakcji
                 transaction.Commit();

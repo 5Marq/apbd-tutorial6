@@ -12,8 +12,8 @@ public class ProductWarehouseService : IProductWarehouseService
         _productWarehouseRepository = productWarehouseRepository;
     }
 
-    public int CreateProductWarehouse(ProductWarehouse _productWarehouse)
+    public async Task<int> CreateProductWarehouse(ProductWarehouse _productWarehouse)
     {
-        return _productWarehouseRepository.CreateProductWarehouse(_productWarehouse);
+        return await _productWarehouseRepository.CreateProductWarehouse(_productWarehouse);
     }
 }
